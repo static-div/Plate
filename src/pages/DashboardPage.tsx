@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DateSelector } from '../components/date/DateSelector'
 import { DiaryTotals } from '../components/dashboard/DiaryTotals'
-import { QuickAddSheet } from '../components/dashboard/QuickAddSheet'
 import { TdeeSummary } from '../components/dashboard/TdeeSummary'
+import { FoodQuantitySheet } from '../components/food/FoodQuantitySheet'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
 import { useSelectedDate } from '../hooks/useSelectedDate'
 import type { DiaryEntryRow, FoodRow } from '../services/db/types'
@@ -69,7 +69,7 @@ export function DashboardPage() {
         +
       </button>
       {showQuickAdd && (
-        <QuickAddSheet foods={foods} onConfirm={handleQuickAdd} onClose={() => setShowQuickAdd(false)} />
+        <FoodQuantitySheet foods={foods} onConfirm={handleQuickAdd} onClose={() => setShowQuickAdd(false)} />
       )}
     </div>
   )

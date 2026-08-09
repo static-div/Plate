@@ -187,6 +187,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  /* So 2-3 fields placed in a .row shrink to share the width instead of
+     overflowing it — inputs have no intrinsic size limit of their own. */
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .field-label {
@@ -201,6 +205,7 @@ body {
 
 .input,
 .select {
+  width: 100%;
   min-height: var(--touch-target-min);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);

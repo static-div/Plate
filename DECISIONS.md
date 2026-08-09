@@ -3,6 +3,60 @@
 Architecture decisions for Plate. Update this file whenever an architectural
 choice is made or changed: what was chosen, what the alternative was, and why.
 
+## 2026-08-09 — Meals screen
+
+### QuickAddSheet generalized into FoodQuantitySheet, moved to src/components/food
+**Decision:** The Dashboard's food-picker-then-quantity sheet moved from
+`components/dashboard/QuickAddSheet.tsx` to `components/food/FoodQuantitySheet.tsx`,
+gained a `title` prop, and is now used by both Dashboard's quick-add
+(writes `diary_entry`) and the Meals ingredient picker (writes
+`meal_ingredient`).
+**Alternative considered:** A second, meal-specific ingredient-picker
+component duplicating the search+quantity UI.
+**Why:** The component never knew or cared what its `onConfirm(food,
+quantity)` callback did with the result — the two use sites already only
+differed in which service function they called after. Duplicating the UI
+to parallel that non-difference would be exactly the kind of copy-paste
+CLAUDE.md's modularity rules call out.
+
+### Meals reuses createDiaryEntry — no separate meal-logging write path
+**Decision:** "Add N portions to today's diary" from the meal editor calls
+the same `createDiaryEntry(userId, { source_type: 'meal', ... })` that
+Dashboard's food quick-add calls (with `source_type: 'food'`) — a function
+that already fully supported meal-sourced entries from when the SQLite
+layer was built, just never had a UI in front of it.
+**Why:** Explicitly requested ("do not create a parallel logging path"),
+and would have been wrong anyway — a second write path is exactly how
+snapshot-on-write logic drifts out of sync with itself.
+
+### Meal creation is two steps: create the shell, then add ingredients
+**Decision:** `/meals/new` shows only a name + portion-count form. On
+submit it calls `createMeal` and navigates (`replace`) to `/meals/:id`,
+which is where ingredients actually get added.
+**Why:** `meal_ingredient.meal_id` references an existing meal — there is
+no meal to attach ingredients to until one has an id. This isn't a design
+choice so much as a consequence of the schema; documenting it so the
+two-step flow doesn't look like an accident later.
+
+### Total/per-portion macros reuse scaleMacros/sumMacros — no new math
+**Decision:** `MealMacroSummary` computes the total via `sumMacros()` over
+the ingredients' snapshot columns and per-portion via `scaleMacros(total,
+1, total_portions)` — the identical pure functions `diaryEntrySnapshot.ts`
+already uses for meal-sourced diary entries, just called for live display
+instead of a snapshot write.
+**Why:** It's the same operation (scale a macro total by a portion
+fraction) in both places; a second implementation would be the same drift
+risk as the logging-path point above, just in `src/lib/calculations`
+instead of the write path.
+
+### Ingredients: add and remove only, no inline quantity edit; delete lives on the list page
+**Decision:** Fixing a wrong ingredient amount means removing and
+re-adding it. Deleting a meal is only reachable from `/meals`, not
+duplicated inside the editor.
+**Why:** Matches what was actually requested ("ingredients added from the
+food catalog," not "editable") and mirrors the Food screen's existing
+delete-on-the-list-page pattern instead of inventing a second one.
+
 ## 2026-08-09 — App shell and core screens
 
 ### Routing: react-router in HashRouter mode

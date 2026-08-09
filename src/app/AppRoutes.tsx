@@ -2,7 +2,8 @@ import { Navigate, Route, Routes } from 'react-router'
 import { DashboardPage } from '../pages/DashboardPage'
 import { FoodEditPage } from '../pages/FoodEditPage'
 import { FoodListPage } from '../pages/FoodListPage'
-import { MealsPage } from '../pages/MealsPage'
+import { MealEditPage } from '../pages/MealEditPage'
+import { MealListPage } from '../pages/MealListPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
 import { RecipesPage } from '../pages/RecipesPage'
 import { WorkoutsPage } from '../pages/WorkoutsPage'
@@ -28,7 +29,9 @@ export function AppRoutes({ hasProfile, onOnboardingComplete }: AppRoutesProps) 
           <Route path="/food" element={<FoodListPage />} />
           <Route path="/food/new" element={<FoodEditPage />} />
           <Route path="/food/:id" element={<FoodEditPage />} />
-          <Route path="/meals" element={<MealsPage />} />
+          <Route path="/meals" element={<MealListPage />} />
+          <Route path="/meals/new" element={<MealEditPage />} />
+          <Route path="/meals/:id" element={<MealEditPage />} />
           <Route path="/workouts" element={<WorkoutsPage />} />
           <Route path="/recipes" element={<RecipesPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
