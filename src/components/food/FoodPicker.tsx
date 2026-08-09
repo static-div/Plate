@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react'
 import type { FoodRow } from '../../services/db/types'
-import { FoodSearchBar } from './FoodSearchBar'
+import { SearchBar } from '../common/SearchBar'
 
 interface FoodPickerProps {
   foods: FoodRow[]
   onSelect: (food: FoodRow) => void
 }
 
-/** Search + select over the catalog. Shared by Dashboard's quick-add today;
- * reuse this rather than duplicating a second food search UI later. */
+/** Search + select over the food catalog. Reused anywhere a food needs to
+ * be picked (Dashboard quick-add, Meals ingredient picker) — don't
+ * duplicate a second food search UI. */
 export function FoodPicker({ foods, onSelect }: FoodPickerProps) {
   const [query, setQuery] = useState('')
 
@@ -20,7 +21,7 @@ export function FoodPicker({ foods, onSelect }: FoodPickerProps) {
 
   return (
     <div className="stack">
-      <FoodSearchBar value={query} onChange={setQuery} />
+      <SearchBar value={query} onChange={setQuery} placeholder="Search foods…" />
       {filtered.length === 0 ? (
         <p className="text-muted">No foods match.</p>
       ) : (

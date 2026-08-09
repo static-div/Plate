@@ -9,10 +9,10 @@ interface FoodQuantitySheetProps {
   title?: string
 }
 
-/** Search a food, then enter a quantity. Shared by Dashboard's quick-add
- * (writes a diary_entry) and the Meals ingredient picker (writes a
- * meal_ingredient) — this component only knows food + quantity, not what
- * the caller does with them. */
+/** Search a food, then enter a quantity. Used by the Meals ingredient
+ * picker (writes a meal_ingredient) — this component only knows food +
+ * quantity, not what the caller does with them, so it's reusable anywhere
+ * else a plain food-and-quantity pick is needed. */
 export function FoodQuantitySheet({ foods, onConfirm, onClose, title = 'Add food' }: FoodQuantitySheetProps) {
   const [selected, setSelected] = useState<FoodRow | null>(null)
   const [quantity, setQuantity] = useState('')

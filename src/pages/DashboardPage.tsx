@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DateSelector } from '../components/date/DateSelector'
+import { AddToDiarySheet } from '../components/dashboard/AddToDiarySheet'
 import { DiaryTotals } from '../components/dashboard/DiaryTotals'
 import { TdeeSummary } from '../components/dashboard/TdeeSummary'
-import { FoodQuantitySheet } from '../components/food/FoodQuantitySheet'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
 import { useSelectedDate } from '../hooks/useSelectedDate'
-import type { DiaryEntryRow, FoodRow } from '../services/db/types'
+import type { DiaryEntryRow, FoodRow, MealRow } from '../services/db/types'
 import { createDiaryEntry, listDiaryEntriesByDate } from '../services/diaryEntry'
 import { listFoods } from '../services/food'
+import { listMeals } from '../services/meal'
 import { getActiveTdee, type ActiveTdee } from '../services/tdee'
 
 export function DashboardPage() {
@@ -16,30 +17,45 @@ export function DashboardPage() {
   const [entries, setEntries] = useState<DiaryEntryRow[]>([])
   const [tdee, setTdee] = useState<ActiveTdee | null>(null)
   const [foods, setFoods] = useState<FoodRow[]>([])
+  const [meals, setMeals] = useState<MealRow[]>([])
   const [showQuickAdd, setShowQuickAdd] = useState(false)
 
   const refresh = useCallback(async () => {
-    const [dayEntries, activeTdee, catalog] = await Promise.all([
+    const [dayEntries, activeTdee, foodCatalog, mealCatalog] = await Promise.all([
       listDiaryEntriesByDate(userId, selectedDate),
       getActiveTdee(userId),
       listFoods(userId),
+      listMeals(userId),
     ])
     setEntries(dayEntries)
     setTdee(activeTdee)
-    setFoods(catalog)
+    setFoods(foodCatalog)
+    setMeals(mealCatalog)
   }, [userId, selectedDate])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  async function handleQuickAdd(food: FoodRow, quantity: number) {
+  async function handleQuickAddFood(food: FoodRow, quantity: number) {
     await createDiaryEntry(userId, {
       date: selectedDate,
       source_type: 'food',
       source_id: food.id,
       quantity,
       quantity_unit: food.serving_unit,
+    })
+    setShowQuickAdd(false)
+    await refresh()
+  }
+
+  async function handleQuickAddMeal(meal: MealRow, portions: number) {
+    await createDiaryEntry(userId, {
+      date: selectedDate,
+      source_type: 'meal',
+      source_id: meal.id,
+      quantity: portions,
+      quantity_unit: 'portion',
     })
     setShowQuickAdd(false)
     await refresh()
@@ -69,7 +85,13 @@ export function DashboardPage() {
         +
       </button>
       {showQuickAdd && (
-        <FoodQuantitySheet foods={foods} onConfirm={handleQuickAdd} onClose={() => setShowQuickAdd(false)} />
+        <AddToDiarySheet
+          foods={foods}
+          meals={meals}
+          onConfirmFood={handleQuickAddFood}
+          onConfirmMeal={handleQuickAddMeal}
+          onClose={() => setShowQuickAdd(false)}
+        />
       )}
     </div>
   )

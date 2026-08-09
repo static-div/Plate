@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ConfirmDialog } from '../components/common/ConfirmDialog'
 import { FoodListItem } from '../components/food/FoodListItem'
-import { FoodSearchBar } from '../components/food/FoodSearchBar'
+import { SearchBar } from '../components/common/SearchBar'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
 import type { FoodRow } from '../services/db/types'
 import { deleteFood, listFoods } from '../services/food'
@@ -37,7 +37,7 @@ export function FoodListPage() {
   return (
     <div className="page">
       <h1 className="heading">Food</h1>
-      <FoodSearchBar value={query} onChange={setQuery} />
+      <SearchBar value={query} onChange={setQuery} placeholder="Search foods…" />
       {filtered.length === 0 ? (
         <div className="empty-state">
           <p>No foods yet.</p>

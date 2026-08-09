@@ -3,6 +3,39 @@
 Architecture decisions for Plate. Update this file whenever an architectural
 choice is made or changed: what was chosen, what the alternative was, and why.
 
+## 2026-08-09 — Dashboard quick-add supports meals
+
+### AddToDiarySheet, not a "meal mode" bolted onto FoodQuantitySheet
+**Decision:** New `components/dashboard/AddToDiarySheet.tsx` with a Food/Meal
+tab, composing the existing `FoodPicker` and the new `MealPicker` for
+selection. `FoodQuantitySheet` is untouched and now used only by the Meals
+ingredient picker.
+**Alternative considered:** Add a food-or-meal mode to `FoodQuantitySheet`
+itself and reuse it from both places.
+**Why:** `FoodQuantitySheet` is also used to add ingredients to a recipe,
+where a "meal" option would be meaningless (recipes can't contain other
+recipes) — putting Dashboard-only branching into a component the Meals
+editor also uses would leak one caller's concern into a spot the other
+caller has to carry around unused.
+
+### Portions-of-a-meal math: zero new code
+**Decision:** Logging N portions of a meal from the Dashboard calls the
+same `createDiaryEntry(userId, { source_type: 'meal', quantity: N,
+quantity_unit: 'portion' })` that the Meals editor's own "log to diary"
+already calls. The scaling — total macros ÷ total_portions × N — is
+`computeDiaryEntrySnapshot`'s existing meal branch, unchanged.
+**Why:** This was already fully implemented (built alongside the SQLite
+layer, before either UI existed); Dashboard's quick-add just needed a way
+to reach it. Writing a second scaling path here, even one that happened to
+compute the same thing, is exactly the drift invariant 1 exists to prevent.
+
+### FoodSearchBar generalized to components/common/SearchBar
+**Decision:** Renamed/moved, gained a `placeholder` prop (defaults to
+`'Search…'`; call sites pass `'Search foods…'` / `'Search meals…'`).
+**Why:** `MealPicker` needed the identical search-input behavior
+`FoodPicker` already had. A component named `FoodSearchBar` reused for
+meals would be a misleading name for what's actually a generic piece.
+
 ## 2026-08-09 — Meals screen
 
 ### QuickAddSheet generalized into FoodQuantitySheet, moved to src/components/food
