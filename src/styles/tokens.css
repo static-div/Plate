@@ -1,0 +1,33 @@
+/*
+ * Design tokens. Every value used by a component must trace back to a
+ * variable defined here — see CLAUDE.md "Styling rules": no raw hex/px,
+ * no raw utility classes.
+ */
+:root {
+  /* Color */
+  --color-bg: #ffffff;
+  --color-surface: #f4f4f5;
+  --color-text: #18181b;
+  --color-text-muted: #71717a;
+  --color-accent: #2563eb;
+  --color-border: #e4e4e7;
+
+  /* Spacing (4px base scale) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+
+  /* Typography */
+  --font-size-body: 1rem;
+  --font-size-heading: 1.5rem;
+
+  /* Touch targets */
+  --touch-target-min: 44px;
+}
