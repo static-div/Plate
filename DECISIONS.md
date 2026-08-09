@@ -3,6 +3,74 @@
 Architecture decisions for Plate. Update this file whenever an architectural
 choice is made or changed: what was chosen, what the alternative was, and why.
 
+## 2026-08-09 — App shell and core screens
+
+### Routing: react-router in HashRouter mode
+**Decision:** `react-router` (v8, library mode — `<Routes>`/`<Route>`/`useNavigate`,
+no SSR/framework features), mounted as `HashRouter` (`index.html#/food`, not
+`index.html/food`).
+**Alternative considered:** `BrowserRouter` (path-based URLs).
+**Why:** Capacitor's Android WebView has no server-side SPA fallback. If
+Android restores WebView navigation state after the OS kills and resumes
+the app process (`Activity.onSaveInstanceState`/`onRestoreInstanceState`,
+which Capacitor's bridge implements), a path like `/food` gets re-requested
+from the bundled asset server, which 404s — there's no physical `/food/index.html`.
+Hash-mode routes never ask the asset server to resolve a sub-path, so this
+failure mode can't happen.
+
+### Back button: tab switches replace, in-tab navigation pushes
+**Decision:** `BottomTabBar`'s `NavLink`s use `replace`. Navigating from a
+tab's list to a detail/edit screen (e.g. Food list → Food edit) uses normal
+push navigation.
+**Alternative considered:** Every navigation pushes a history entry.
+**Why:** If tab taps pushed, casually tapping through all 5 tabs once would
+take 5 back-presses just to undo — that reads as broken, not "sensible."
+Once history is exhausted, Capacitor's default Android behavior (minimize
+the app) takes over on its own; no custom back-button listener was needed.
+
+### Only the Dashboard's selected date is lifted out of its screen
+**Decision:** `SelectedDateProvider`/`useSelectedDate` hold just that one
+piece of state above the router, in a context. Every other screen's local
+state resets normally when its route unmounts.
+**Alternative considered:** Keep all 5 tab route trees permanently mounted
+(hidden via CSS instead of unmounted), so every tab's state and in-flight
+effects persist automatically.
+**Why:** The spec named exactly one thing that must survive tab switches.
+Keep-alive-all-tabs is the more general fix, but it means every tab's data
+fetches and effects stay live in the background at all times — a bigger
+architectural commitment than one context for one value. Revisit if more
+screens turn out to need this.
+
+### Onboarding also collects a starting weight
+**Decision:** `ProfileForm` asks for height/age/sex (`profile`) *and*
+current weight, optionally body-fat % + method (seeds the first `body_log`
+row on submit).
+**Alternative considered:** Onboarding collects only `profile` fields,
+literally matching "collects Profile"; Dashboard shows an empty TDEE state
+until a future stage adds weight-logging UI.
+**Why:** Mifflin-St Jeor and Katch-McArdle both require a current
+`weight_kg`, which lives in `body_log`, not `profile`. With no other
+weight-entry screen in this stage, staying literal would ship a Dashboard
+whose headline feature (active TDEE) never works. Body-fat stays optional.
+
+### `src/services/tdee.ts`: an orchestrator, not a calculation or a plain CRUD module
+**Decision:** New module that reads `profile` + `body_log` + the new
+`diaryEntry.listDailyCalorieTotals` query, and feeds them into
+`selectFormulaTdee`/`computeObservedTdee`.
+**Why:** It does real storage reads (disqualifying it from
+`src/lib/calculations`, which must stay pure) but does no math of its own
+(disqualifying it from being "just" a CRUD file like `food.ts`). It's the
+seam CLAUDE.md's invariant 2 describes — service-layer code the UI calls,
+that itself calls the pure calculation layer.
+
+### Meals: empty shell this stage, same as Workouts/Recipes
+**Decision:** `MealsPage` renders the same `ComingSoon` component as
+Workouts/Recipes, despite `meal.ts`/`mealIngredient.ts` already existing.
+**Why:** The stage spec detailed Onboarding/Food/Dashboard and explicitly
+scoped Workouts+Recipes as shells, but never described a Meals UI (recipe
+builder, ingredient picker) at all. Building one anyway would be inventing
+a flow nobody specified, not implementing a given one.
+
 ## 2026-08-09 — TDEE calculation module
 
 ### `profile.activity_level` removed

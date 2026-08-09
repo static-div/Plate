@@ -1,15 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { HashRouter } from 'react-router'
 import './index.css'
-import App from './App.tsx'
-import { initDatabase } from './services/db/connection'
-
-initDatabase().catch((err: unknown) => {
-  console.error('Database initialization failed', err)
-})
+import { Root } from './app/Root'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <HashRouter>
+      <Root />
+    </HashRouter>
   </StrictMode>,
 )

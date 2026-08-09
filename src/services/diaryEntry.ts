@@ -63,6 +63,23 @@ export async function getDiaryEntry(userId: string, id: string): Promise<DiaryEn
   return rows[0] ?? null
 }
 
+/** One row per date that has at least one entry, summed from active
+ * snapshots. Dates with no entries are simply absent, never zero-filled —
+ * that's the caller's (e.g. computeObservedTdee's) job to interpret. */
+export async function listDailyCalorieTotals(
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Promise<{ date: string; calories: number }[]> {
+  const driver = getDriver()
+  return driver.query<{ date: string; calories: number }>(
+    `SELECT date, SUM(s_calories) AS calories FROM diary_entry
+     WHERE date >= ? AND date <= ? AND ${ACTIVE_FILTER}
+     GROUP BY date`,
+    [startDate, endDate, userId],
+  )
+}
+
 export async function listDiaryEntriesByDate(userId: string, date: string): Promise<DiaryEntryRow[]> {
   const driver = getDriver()
   return driver.query<DiaryEntryRow>(`SELECT * FROM diary_entry WHERE date = ? AND ${ACTIVE_FILTER}`, [

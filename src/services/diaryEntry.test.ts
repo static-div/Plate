@@ -4,7 +4,7 @@ import { createTestUser, setupTestDb, teardownTestDb } from './db/testing/setupT
 import { createFood, deleteFood, updateFood } from './food'
 import { createMeal } from './meal'
 import { createMealIngredient } from './mealIngredient'
-import { createDiaryEntry, getDiaryEntry, listDiaryEntriesByDate } from './diaryEntry'
+import { createDiaryEntry, getDiaryEntry, listDailyCalorieTotals, listDiaryEntriesByDate } from './diaryEntry'
 
 let driver: SqlDriver
 let userId: string
@@ -179,5 +179,40 @@ describe('validation', () => {
         quantity_unit: 'g',
       }),
     ).rejects.toThrow(/portion/)
+  })
+})
+
+describe('listDailyCalorieTotals', () => {
+  it('sums same-day entries and omits days with none, never zero-filling', async () => {
+    const food = await createFood(userId, chickenPer100g)
+    // 150g + 50g on the 9th: 165*1.5 + 165*0.5 = 247.5 + 82.5 = 330
+    await createDiaryEntry(userId, {
+      date: '2026-08-09',
+      source_type: 'food',
+      source_id: food.id,
+      quantity: 150,
+      quantity_unit: 'g',
+    })
+    await createDiaryEntry(userId, {
+      date: '2026-08-09',
+      source_type: 'food',
+      source_id: food.id,
+      quantity: 50,
+      quantity_unit: 'g',
+    })
+    // Nothing logged on the 10th (a gap). 100g on the 11th: 165.
+    await createDiaryEntry(userId, {
+      date: '2026-08-11',
+      source_type: 'food',
+      source_id: food.id,
+      quantity: 100,
+      quantity_unit: 'g',
+    })
+
+    const totals = await listDailyCalorieTotals(userId, '2026-08-09', '2026-08-11')
+    expect(totals).toEqual([
+      { date: '2026-08-09', calories: 330 },
+      { date: '2026-08-11', calories: 165 },
+    ])
   })
 })

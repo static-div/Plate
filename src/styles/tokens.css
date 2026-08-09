@@ -10,7 +10,11 @@
   --color-text: #18181b;
   --color-text-muted: #71717a;
   --color-accent: #2563eb;
+  --color-accent-contrast: #ffffff;
   --color-border: #e4e4e7;
+  --color-danger: #b91c1c;
+  --color-danger-contrast: #ffffff;
+  --color-overlay: rgba(0, 0, 0, 0.5);
 
   /* Spacing (4px base scale) */
   --space-1: 0.25rem;
@@ -23,11 +27,19 @@
   /* Radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-full: 999px;
 
   /* Typography */
+  --font-size-sm: 0.875rem;
   --font-size-body: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 2rem;
   --font-size-heading: 1.5rem;
 
   /* Touch targets */
   --touch-target-min: 44px;
+
+  /* Layout */
+  --tab-bar-height: 64px;
 }
