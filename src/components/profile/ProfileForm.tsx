@@ -12,6 +12,7 @@ export interface ProfileFormResult {
 interface ProfileFormProps {
   onSubmit: (values: ProfileFormResult) => void
   submitLabel?: string
+  submitting?: boolean
 }
 
 const BODY_FAT_METHODS: { value: BodyFatMethod; label: string }[] = [
@@ -21,7 +22,7 @@ const BODY_FAT_METHODS: { value: BodyFatMethod; label: string }[] = [
   { value: 'bioimpedance', label: 'Bioimpedance scale' },
 ]
 
-export function ProfileForm({ onSubmit, submitLabel = 'Save' }: ProfileFormProps) {
+export function ProfileForm({ onSubmit, submitLabel = 'Save', submitting = false }: ProfileFormProps) {
   const [heightCm, setHeightCm] = useState('')
   const [age, setAge] = useState('')
   const [sex, setSex] = useState<'male' | 'female'>('male')
@@ -32,6 +33,7 @@ export function ProfileForm({ onSubmit, submitLabel = 'Save' }: ProfileFormProps
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (submitting) return
     const heightNum = Number(heightCm)
     const ageNum = Number(age)
     const weightNum = Number(weightKg)
@@ -122,8 +124,8 @@ export function ProfileForm({ onSubmit, submitLabel = 'Save' }: ProfileFormProps
         </div>
       )}
       {error && <p className="field-error">{error}</p>}
-      <button type="submit" className="btn btn-primary btn-block">
-        {submitLabel}
+      <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+        {submitting ? 'Saving…' : submitLabel}
       </button>
     </form>
   )

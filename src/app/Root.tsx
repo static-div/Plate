@@ -54,10 +54,14 @@ export function Root() {
     )
   }
 
+  function handleOnboardingComplete() {
+    setBoot((prev) => (prev.status === 'ready' ? { ...prev, hasProfile: true } : prev))
+  }
+
   return (
     <UserIdProvider userId={boot.userId}>
       <SelectedDateProvider>
-        <AppRoutes hasProfile={boot.hasProfile} />
+        <AppRoutes hasProfile={boot.hasProfile} onOnboardingComplete={handleOnboardingComplete} />
       </SelectedDateProvider>
     </UserIdProvider>
   )

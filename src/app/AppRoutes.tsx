@@ -8,12 +8,19 @@ import { RecipesPage } from '../pages/RecipesPage'
 import { WorkoutsPage } from '../pages/WorkoutsPage'
 import { TabShell } from './TabShell'
 
-/** Onboarding is reachable regardless of profile state (so a resubmit can't
- * get stuck); every other route requires a profile, or redirects to it. */
-export function AppRoutes({ hasProfile }: { hasProfile: boolean }) {
+interface AppRoutesProps {
+  hasProfile: boolean
+  onOnboardingComplete: () => void
+}
+
+/** hasProfile gates every non-onboarding route. It must flip the moment
+ * onboarding finishes (via onOnboardingComplete), not just get re-checked
+ * on the next cold boot — otherwise a just-completed onboarding still
+ * renders against the "no profile" route tree and bounces straight back. */
+export function AppRoutes({ hasProfile, onOnboardingComplete }: AppRoutesProps) {
   return (
     <Routes>
-      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/onboarding" element={<OnboardingPage onComplete={onOnboardingComplete} />} />
       {hasProfile ? (
         <Route element={<TabShell />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
