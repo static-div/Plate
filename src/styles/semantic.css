@@ -20,10 +20,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.bg-surface {
-  background: var(--color-surface);
-}
-
 .text-muted {
   color: var(--color-text-muted);
 }
@@ -67,10 +63,6 @@ body {
 
 .text-danger {
   color: var(--color-danger);
-}
-
-.text-center {
-  text-align: center;
 }
 
 /* Layout */

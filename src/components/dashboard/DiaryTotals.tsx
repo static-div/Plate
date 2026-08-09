@@ -1,5 +1,5 @@
 import { sumMacros } from '../../lib/calculations/macros'
-import type { DiaryEntryRow } from '../../services/db/types'
+import { snapshotMacros, type DiaryEntryRow } from '../../services/db/types'
 
 interface DiaryTotalsProps {
   entries: DiaryEntryRow[]
@@ -7,14 +7,7 @@ interface DiaryTotalsProps {
 }
 
 export function DiaryTotals({ entries, activeTdee }: DiaryTotalsProps) {
-  const totals = sumMacros(
-    entries.map((e) => ({
-      calories: e.s_calories,
-      protein_g: e.s_protein_g,
-      carbs_g: e.s_carbs_g,
-      fat_g: e.s_fat_g,
-    })),
-  )
+  const totals = sumMacros(entries.map(snapshotMacros))
   const remaining = activeTdee != null ? activeTdee - totals.calories : null
 
   return (

@@ -4,15 +4,12 @@ import { MealEditor } from '../components/meal/MealEditor'
 import { MealForm } from '../components/meal/MealForm'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
 import { useSelectedDate } from '../hooks/useSelectedDate'
+import { errorMessage } from '../lib/errorMessage'
 import type { FoodRow, MealIngredientRow, MealRow } from '../services/db/types'
 import { createDiaryEntry } from '../services/diaryEntry'
 import { listFoods } from '../services/food'
 import { createMeal, getMeal, updateMeal, type CreateMealInput } from '../services/meal'
 import { createMealIngredient, deleteMealIngredient, listMealIngredientsByMeal } from '../services/mealIngredient'
-
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
-}
 
 export function MealEditPage() {
   const { id } = useParams()
@@ -43,7 +40,9 @@ export function MealEditPage() {
   }, [refresh])
 
   useEffect(() => {
-    listFoods(userId).then(setFoods)
+    listFoods(userId)
+      .then(setFoods)
+      .catch((err: unknown) => setError(errorMessage(err)))
   }, [userId])
 
   async function handleCreate(values: Pick<CreateMealInput, 'name' | 'total_portions'>) {

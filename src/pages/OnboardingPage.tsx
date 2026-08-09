@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { todayLocal } from '../app/todayLocal'
 import { ProfileForm, type ProfileFormResult } from '../components/profile/ProfileForm'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
+import { errorMessage } from '../lib/errorMessage'
 import { upsertBodyLog } from '../services/bodyLog'
 import { createProfile } from '../services/profile'
 
@@ -30,7 +31,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
       onComplete()
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(errorMessage(err))
       setSubmitting(false)
     }
   }

@@ -5,6 +5,7 @@ import { DiaryTotals } from '../components/dashboard/DiaryTotals'
 import { TdeeSummary } from '../components/dashboard/TdeeSummary'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
 import { useSelectedDate } from '../hooks/useSelectedDate'
+import { errorMessage } from '../lib/errorMessage'
 import type { DiaryEntryRow, FoodRow, MealRow } from '../services/db/types'
 import { createDiaryEntry, listDiaryEntriesByDate } from '../services/diaryEntry'
 import { listFoods } from '../services/food'
@@ -19,18 +20,24 @@ export function DashboardPage() {
   const [foods, setFoods] = useState<FoodRow[]>([])
   const [meals, setMeals] = useState<MealRow[]>([])
   const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
-    const [dayEntries, activeTdee, foodCatalog, mealCatalog] = await Promise.all([
-      listDiaryEntriesByDate(userId, selectedDate),
-      getActiveTdee(userId),
-      listFoods(userId),
-      listMeals(userId),
-    ])
-    setEntries(dayEntries)
-    setTdee(activeTdee)
-    setFoods(foodCatalog)
-    setMeals(mealCatalog)
+    try {
+      setError(null)
+      const [dayEntries, activeTdee, foodCatalog, mealCatalog] = await Promise.all([
+        listDiaryEntriesByDate(userId, selectedDate),
+        getActiveTdee(userId),
+        listFoods(userId),
+        listMeals(userId),
+      ])
+      setEntries(dayEntries)
+      setTdee(activeTdee)
+      setFoods(foodCatalog)
+      setMeals(mealCatalog)
+    } catch (err) {
+      setError(errorMessage(err))
+    }
   }, [userId, selectedDate])
 
   useEffect(() => {
@@ -38,27 +45,37 @@ export function DashboardPage() {
   }, [refresh])
 
   async function handleQuickAddFood(food: FoodRow, quantity: number) {
-    await createDiaryEntry(userId, {
-      date: selectedDate,
-      source_type: 'food',
-      source_id: food.id,
-      quantity,
-      quantity_unit: food.serving_unit,
-    })
-    setShowQuickAdd(false)
-    await refresh()
+    try {
+      setError(null)
+      await createDiaryEntry(userId, {
+        date: selectedDate,
+        source_type: 'food',
+        source_id: food.id,
+        quantity,
+        quantity_unit: food.serving_unit,
+      })
+      setShowQuickAdd(false)
+      await refresh()
+    } catch (err) {
+      setError(errorMessage(err))
+    }
   }
 
   async function handleQuickAddMeal(meal: MealRow, portions: number) {
-    await createDiaryEntry(userId, {
-      date: selectedDate,
-      source_type: 'meal',
-      source_id: meal.id,
-      quantity: portions,
-      quantity_unit: 'portion',
-    })
-    setShowQuickAdd(false)
-    await refresh()
+    try {
+      setError(null)
+      await createDiaryEntry(userId, {
+        date: selectedDate,
+        source_type: 'meal',
+        source_id: meal.id,
+        quantity: portions,
+        quantity_unit: 'portion',
+      })
+      setShowQuickAdd(false)
+      await refresh()
+    } catch (err) {
+      setError(errorMessage(err))
+    }
   }
 
   return (
@@ -66,6 +83,7 @@ export function DashboardPage() {
       <DateSelector date={selectedDate} onChange={setSelectedDate} />
       <TdeeSummary tdee={tdee} />
       <DiaryTotals entries={entries} activeTdee={tdee?.activeTdee ?? null} />
+      {error && <p className="field-error">{error}</p>}
       <div className="stack">
         <span className="field-label">Logged this day</span>
         {entries.length === 0 ? (

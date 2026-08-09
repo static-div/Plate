@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog'
 import { FoodListItem } from '../components/food/FoodListItem'
 import { SearchBar } from '../components/common/SearchBar'
 import { useCurrentUserId } from '../hooks/useCurrentUserId'
+import { errorMessage } from '../lib/errorMessage'
 import type { FoodRow } from '../services/db/types'
 import { deleteFood, listFoods } from '../services/food'
 
@@ -13,9 +14,15 @@ export function FoodListPage() {
   const [foods, setFoods] = useState<FoodRow[]>([])
   const [query, setQuery] = useState('')
   const [pendingDelete, setPendingDelete] = useState<FoodRow | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
-    setFoods(await listFoods(userId))
+    try {
+      setError(null)
+      setFoods(await listFoods(userId))
+    } catch (err) {
+      setError(errorMessage(err))
+    }
   }, [userId])
 
   useEffect(() => {
@@ -29,15 +36,22 @@ export function FoodListPage() {
 
   async function handleDelete() {
     if (!pendingDelete) return
-    await deleteFood(userId, pendingDelete.id)
-    setPendingDelete(null)
-    await refresh()
+    try {
+      setError(null)
+      await deleteFood(userId, pendingDelete.id)
+      await refresh()
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setPendingDelete(null)
+    }
   }
 
   return (
     <div className="page">
       <h1 className="heading">Food</h1>
       <SearchBar value={query} onChange={setQuery} placeholder="Search foods…" />
+      {error && <p className="field-error">{error}</p>}
       {filtered.length === 0 ? (
         <div className="empty-state">
           <p>No foods yet.</p>

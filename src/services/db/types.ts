@@ -1,3 +1,4 @@
+import type { BodyFatMethod } from '../../lib/calculations/formulaTdee'
 import type { Macros } from '../../lib/calculations/macros'
 
 interface Timestamped {
@@ -71,7 +72,7 @@ export interface BodyLogRow extends Timestamped {
   date: string
   weight_kg: number
   body_fat_percent: number | null
-  body_fat_method: 'visual_estimate' | 'navy_tape' | 'dexa' | 'bioimpedance' | null
+  body_fat_method: BodyFatMethod | null
   notes: string | null
 }
 

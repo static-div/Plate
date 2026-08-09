@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { errorMessage } from '../lib/errorMessage'
 import { getCurrentUserId } from '../services/db/currentUser'
 import { initDatabase } from '../services/db/connection'
 import { getProfile } from '../services/profile'
@@ -27,7 +28,7 @@ export function Root() {
         if (!cancelled) setBoot({ status: 'ready', userId, hasProfile: profile !== null })
       } catch (err) {
         if (!cancelled) {
-          setBoot({ status: 'error', message: err instanceof Error ? err.message : String(err) })
+          setBoot({ status: 'error', message: errorMessage(err) })
         }
       }
     }
