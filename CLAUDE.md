@@ -89,3 +89,15 @@ In order:
 
 Tests that merely mirror current behaviour are worthless. Assert against
 values verified by hand.
+## Modularity rules
+
+- No component over ~150 lines. Split into smaller components before that.
+- One component per file. A screen is a container that composes small pieces
+  (list, row, form, header), not one large file.
+- The data module is split by entity (food, meal, diary, body, profile), not
+  one monolithic file.
+- Shared logic — validation, formatting, scaling — lives in a reusable function
+  imported by every caller, never copy-pasted between screens.
+- A component that's needed in two places (food search, macro display, date
+  selector) is a shared component, not duplicated.
+- If you find yourself pasting similar code a second time, stop and extract it.

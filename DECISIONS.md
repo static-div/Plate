@@ -90,6 +90,94 @@ an open question, not a permanent decision — once real screens make the
 semantic class list large enough that Tailwind's authoring ergonomics start
 to pay for themselves.
 
+## 2026-08-09 — SQLite data layer
+
+### @capacitor-community/sqlite for storage, driver interface as the seam
+**Decision:** `src/services/db/driver.ts` defines a minimal `SqlDriver`
+interface (execute/run/query/transaction/close). `capacitorDriver.ts`
+implements it against `@capacitor-community/sqlite`. Entity modules
+(`food.ts`, `diaryEntry.ts`, etc.) call `getDriver()` from
+`db/connection.ts` and never import the Capacitor plugin directly.
+**Alternative considered:** Entity modules import `@capacitor-community/sqlite`
+directly.
+**Why:** `@capacitor-community/sqlite` only runs inside an actual
+Android/iOS/web webview — it cannot run under Vitest/Node. A driver
+interface lets tests swap in a real SQLite engine (`better-sqlite3`, dev-only
+dependency) that runs the exact same SQL, so snapshot/soft-delete/user_id
+logic is tested against real SQLite instead of mocks.
+
+### Migrations and "create schema on first launch" are the same code path
+**Decision:** `schema_version` starts empty. Migration 1's `up` is the raw
+text of `SCHEMA.sql` (imported via Vite's `?raw`, not duplicated). The
+runner (`db/migrate.ts`) applies every migration with
+`version > MAX(schema_version.version)`, in order, each wrapped in its own
+transaction that also inserts its own `schema_version` row. On a brand-new
+database that means just migration 1 runs — there's no separate "create
+schema" step to keep in sync with the migration list.
+**Alternative considered:** A dedicated "if no tables exist, run SCHEMA.sql"
+bootstrap path, separate from the migration runner.
+**Why:** Two code paths that both create schema (one for fresh installs, one
+for upgrades) drift apart over time. One path, driven by `schema_version`,
+can't drift because there's only one implementation to change.
+**How to add a migration:** add a file to `db/migrations/` exporting
+`{ version: N, up: '<sql>' }`, add it to the array in `db/migrations/index.ts`.
+The runner picks it up automatically.
+**schema_version shape:** one row appended per applied migration (never
+updated in place), current version = `MAX(version)` — matches the
+insert-only spirit of the rest of the schema (no `UPDATE`, no `DELETE`).
+
+### Macro scaling: one function, one base, used everywhere
+**Decision:** `src/lib/calculations/macros.ts` exports exactly two pure
+functions: `scaleMacros(macros, quantity, base)` = `macros × (quantity / base)`,
+and `sumMacros(list)`. Every place a snapshot gets computed uses the same
+`scaleMacros` call, just with a different `base`:
+- `meal_ingredient`: `base = food.serving_size`.
+- `diary_entry` (source_type='food'): same rule, same base — `quantity` is
+  an amount in `quantity_unit`, **not** a bare serving count.
+- `diary_entry` (source_type='meal'): `base = meal.total_portions`, applied
+  to `sumMacros()` of that meal's active ingredient snapshots.
+- `quantity_unit` must equal `food.serving_unit` (food-sourced) or the
+  literal string `'portion'` (meal-sourced); writes are rejected otherwise
+  since there's no unit-conversion logic.
+**Alternative considered:** A different scaling formula for food-logged
+amounts vs. recipe ingredients (e.g. treating `diary_entry.quantity` as a
+raw serving count multiplied directly, no division).
+**Why:** With one rule, logging 150g of a food directly and logging 150g of
+that food as a recipe ingredient produce the identical number — that
+equality is the correctness check the tests assert. Two different formulas
+for the "same" operation is exactly the kind of drift invariant 1 (snapshot
+on write) exists to prevent.
+
+### SCHEMA.sql's plain UNIQUE constraints changed to partial unique indexes
+**Decision:** `food(user_id, code)`, `profile(user_id)`, and
+`body_log(user_id, date)` are now `CREATE UNIQUE INDEX ... WHERE deleted_at
+IS NULL` instead of table-level `UNIQUE`.
+**Alternative considered:** Leave them as table-level `UNIQUE` and let
+re-insertion attempts fail with a constraint error.
+**Why:** SQLite's plain `UNIQUE` doesn't know about `deleted_at` — a
+soft-deleted food would permanently block ever re-adding its barcode, a
+soft-deleted profile would block ever creating a new one, a soft-deleted
+body_log entry would block ever re-logging that date. That directly
+contradicts what soft-delete is supposed to mean (invariant 5). The partial
+index keeps uniqueness among active rows while letting deleted rows get out
+of the way. `body_log`'s upsert (`ON CONFLICT (user_id, date) WHERE
+deleted_at IS NULL DO UPDATE`) targets this same partial index.
+
+### Snapshot re-derivation on every write, not just creation
+**Decision:** `updateMealIngredient`/`updateDiaryEntry` re-fetch the current
+active source (food or meal) and recompute the snapshot from it, rather than
+proportionally rescaling the stored snapshot. If the source is no longer
+active, the update throws.
+**Alternative considered:** Rescale the existing snapshot in place
+(`newSnapshot = oldSnapshot * newQuantity/oldQuantity`), never re-reading
+the source.
+**Why:** "Any dated log row copies the macro values at the moment it is
+written" (invariant 1) reads naturally as applying to every write to that
+row, not only its first one. This only affects deliberately editing a
+specific log row's own quantity — it's unrelated to (and doesn't weaken)
+the rule that editing the underlying `food` row must never retroactively
+change existing snapshots.
+
 ### Android target: API 34 (Android 14), min SDK 24
 **Decision:** `compileSdkVersion`/`targetSdkVersion` set to 34 to match the
 primary test device (Samsung A55, Android 14). `minSdkVersion` left at
