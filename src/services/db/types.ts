@@ -12,7 +12,6 @@ export interface ProfileRow extends Timestamped {
   height_cm: number
   age: number
   sex: 'male' | 'female'
-  activity_level: string
 }
 
 export interface FoodRow extends Timestamped {

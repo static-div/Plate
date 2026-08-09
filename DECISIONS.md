@@ -3,6 +3,60 @@
 Architecture decisions for Plate. Update this file whenever an architectural
 choice is made or changed: what was chosen, what the alternative was, and why.
 
+## 2026-08-09 — TDEE calculation module
+
+### `profile.activity_level` removed
+**Decision:** Dropped the column from `SCHEMA.sql` (and `ProfileRow`,
+`CreateProfileInput`).
+**Alternative considered:** Keep the column and define explicit per-level
+activity multipliers (light/moderate/active/very_active) that the formulas
+would select between.
+**Why:** Every TDEE formula in `src/lib/calculations` — Mifflin-St Jeor,
+Katch-McArdle, both anchor cases — uses a fixed sedentary (1.2) multiplier;
+none of them ever reads `activity_level`. A schema column no calculation
+reads is dead weight, and adding real per-level multipliers would be a new
+feature the spec never asked for, not an implementation of it. Edited
+`SCHEMA.sql` directly rather than adding a migration, same as the earlier
+UNIQUE-constraint fix — no real installs exist yet to migrate.
+
+### Observed TDEE: fixed trailing 28-day window, not "all logged history"
+**Decision:** `computeObservedTdee` always looks at exactly the 28 calendar
+days ending at the most recent weight entry. Entries older than that are
+ignored outright, not merged or weighted down.
+**Alternative considered:** Use the full logging history, with start/end
+groups being "the first 7 logged entries" / "the last 7 logged entries"
+regardless of how far apart they are in time.
+**Why:** An unbounded window means a user who logged heavily in month one
+and sparsely since would get a comparison spanning many months, diluting how
+"current" the estimate is. A fixed trailing window keeps the estimate
+anchored to recent reality, which is the whole point of replacing formulas
+with observed data (see the original TDEE spec: "supersedes the formula
+estimate" because it reflects *actual*, *current* behavior).
+
+### Group midpoint = mean of entry dates, not the median entry's date
+**Decision:** Each 4-7 entry group's "midpoint" (used to compute `days`) is
+the arithmetic mean of its entries' day-numbers, not the date of its middle
+entry.
+**Alternative considered:** Median entry's date (simpler when a group has
+exactly 7 entries — just take the 4th).
+**Why:** Groups can have anywhere from 4 to 7 entries depending on how
+consistently the user logged, so there isn't always a single "middle"
+entry. Mean-of-dates works uniformly at any group size from 4 to 7 and
+degrades gracefully — this was specified explicitly rather than left for
+me to infer.
+
+### Full float precision from calculations; rounding is a display concern
+**Decision:** No `Math.round`/`toFixed` anywhere in `src/lib/calculations`.
+Tests assert with `toBeCloseTo(expected, 6)`.
+**Why:** Rounding intermediate values (e.g. `dailyEnergyBalanceKcal` before
+using it in `observedTdee`) would compound error through the pipeline.
+Keeping full precision until a UI component formats a number for display
+means the stored/computed values stay exact and reproducible.
+
+See `TDEE_CALCULATIONS.md` for the full hand-verification record — every
+formula's expected value alongside what the implementation actually
+produced.
+
 ## 2026-08-09 — Initial project setup
 
 ### Stack: React + Vite + TypeScript, wrapped with Capacitor for Android

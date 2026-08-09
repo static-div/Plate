@@ -16,10 +16,10 @@ afterEach(async () => {
 })
 
 describe('profile CRUD', () => {
-  it('creates and reads back a profile, defaulting activity_level', async () => {
+  it('creates and reads back a profile', async () => {
     await createProfile(userId, { height_cm: 180, age: 30, sex: 'male' })
     const profile = await getProfile(userId)
-    expect(profile).toMatchObject({ height_cm: 180, age: 30, sex: 'male', activity_level: 'sedentary' })
+    expect(profile).toMatchObject({ height_cm: 180, age: 30, sex: 'male' })
   })
 
   it('updates fields', async () => {

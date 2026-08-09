@@ -30,13 +30,15 @@ CREATE TABLE user (
   deleted_at  TEXT
 );
 
+-- No activity_level: every TDEE calculation in src/lib/calculations uses a
+-- fixed sedentary (1.2) multiplier. A column no formula ever reads would be
+-- dead schema; see DECISIONS.md.
 CREATE TABLE profile (
   id             TEXT PRIMARY KEY,
   user_id        TEXT NOT NULL REFERENCES user(id),
   height_cm      REAL NOT NULL,
   age            INTEGER NOT NULL,
   sex            TEXT NOT NULL CHECK (sex IN ('male','female')),
-  activity_level TEXT NOT NULL DEFAULT 'sedentary',
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL,
   deleted_at     TEXT

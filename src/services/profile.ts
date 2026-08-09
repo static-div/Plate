@@ -6,7 +6,6 @@ export interface CreateProfileInput {
   height_cm: number
   age: number
   sex: 'male' | 'female'
-  activity_level?: string
 }
 
 export type UpdateProfileInput = Partial<CreateProfileInput>
@@ -16,9 +15,9 @@ export async function createProfile(userId: string, input: CreateProfileInput): 
   const id = newId()
   const now = nowIso()
   await driver.run(
-    `INSERT INTO profile (id, user_id, height_cm, age, sex, activity_level, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, userId, input.height_cm, input.age, input.sex, input.activity_level ?? 'sedentary', now, now],
+    `INSERT INTO profile (id, user_id, height_cm, age, sex, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, userId, input.height_cm, input.age, input.sex, now, now],
   )
   const row = await getProfile(userId)
   if (!row) throw new Error('createProfile: insert succeeded but row not found')
